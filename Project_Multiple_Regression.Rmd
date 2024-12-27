@@ -1,0 +1,431 @@
+---
+title: "Project_Multiple_Regression"
+author: "Laksh Anil Budhrani"
+date: "2024-11-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Introduction
+
+The objective of this report is to develop multiple regression models to predict the percentage of body fat (**PctBF**) using various body measurements and other predictor variables. Multiple regression is a valuable statistical technique that allows us to understand the relationship between a dependent variable and *multiple independent variables* simultaneously, making it a robust method for prediction. This approach can provide more comprehensive insights compared to simple linear regression, which only considers one predictor variable at a time. 
+
+The data for this analysis is sourced from the `Bodyfat.xlsx` file, which contains a range of variables related to body dimensions. Our initial approach involved predicting **PctBF** from **WaistSize**, but given the richness of the dataset, we aim to explore more comprehensive models.
+
+To achieve this, we have divided the body into three distinct regions:
+
+1. **Upper Body**
+2. **Lower Body**
+3. **Hands**
+
+Each region is represented by specific variables:
+
+- *Upper Body:* Neck, Chest, Abdomen
+- *Lower Body:* Hip, Thigh, Knee
+- *Hands:* Biceps, Forearms, Wrist
+
+By segmenting the body in this manner, we can compare the influence of different body regions on **PctBF**. This approach allows us to identify which body parts are most predictive of body fat percentage and to develop targeted regression models for each region.
+
+
+### Data set:
+```{r}
+library(tidyverse)
+library(readxl)
+BodyFat <- read_excel("Bodyfat.xlsx")
+BodyFat
+```
+
+1. glimpse() (from *tidyverse* library)
+```{r}
+glimpse(BodyFat)
+```
+The **glimpse** function shows that our dataset contains *250 observations* and *16 features*. All of the features are quantitative in nature and have a double data type.
+
+2. head()
+
+The **head** function shows the initial 6 rows of our table
+```{r}
+head(BodyFat)
+```
+
+3. Sample of our Multiple Regression model Variables
+```{r}
+BodyFat %>% select(PctBF, Neck, Chest, Abdomen) %>% sample_n(size = 10)
+BodyFat %>% select(PctBF, Hip, Thigh, Knee) %>% sample_n(size = 10)
+BodyFat %>% select(PctBF, Bicep, Forearm, Wrist) %>% sample_n(size = 10)
+```
+
+4. summary()
+
+We use **summary** function to find 5-number summary along with the Mean for all the features. 
+```{r}
+summary(BodyFat)
+```
+We find using the summary function that all the features in this dataset are normally distributed. The reason to conclude that is because the mean and median are very close to each other for all the variables. 
+
+### R functions/tools used in this project
+
+`ggplot2 functions` -
+
+1. `geom_point and geom_smooth`
+
+**geom_point()** creates scatter plots to visualize the relationship between variables.  
+**geom_smooth(method = "lm")** adds a linear regression line to the scatter plot, helping to visualize the fit of the model.
+
+2. `geom_histogram and geom_density`
+
+**geom_histogram()** creates histograms to visualize the distribution of residuals.  
+**geom_density()** adds a density plot over the histogram to assess the distribution shape.
+
+3. `geom_qq and geom_qq_line`
+
+**geom_qq()** creates Q-Q plots to check the normality of residuals.  
+**geom_qq_line()** adds a reference line to the Q-Q plot to help assess normality.
+
+`lm` - The lm() function is used to create multiple regression models. It estimates the relationship between a dependent variable and one or more independent variables.
+
+`summary` - The summary(model) function provides a detailed regression table with coefficients, standard errors, t-values, and p-values. This helps in understanding the significance of each predictor.
+
+`anova` - The anova(model) function provides the ANOVA table, which includes the F-statistic and p-values, helping to understand the overall significance of the model.
+
+`residuals` - Analyzing the residuals helps in checking the assumptions of the regression model, such as homoscedasticity and normality.
+
+`sd` - The sd(model$residuals) function in R calculates the standard deviation of the residuals from a fitted linear model. A lower standard deviation indicates that the residuals are closer to the regression line, which signifies a better fit of the model to the data.
+
+## 2. Model 1 - Association between Percentage Body Fat and Upper Body Parts
+
+### 2.1 Scatterplots - Straight enough condition
+
+Before proceeding with the multiple regression model, it is crucial to ensure that the relationship between the dependent variable (PctBF) and each independent variable is linear. This can be assessed by examining scatterplots of PctBF against each predictor variable.
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Neck, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Chest, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Abdomen, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+Upon reviewing the scatterplots, we observed that the relationships between PctBF and the independent variables (Neck, Chest, and Abdomen) are linear. This linearity is indicated by the straight-line patterns in the scatterplots, which suggests that the assumptions of linearity are met.
+
+Given that the scatterplots show a linear relationship with respect to the independent variables, we can confidently proceed with fitting the multiple regression model.
+
+### 2.2 Multiple Regression
+
+```{r}
+lmBodyFatUpperBody <- lm(PctBF ~ Neck + Chest + Abdomen, data = BodyFat)
+lmBodyFatUpperBody
+```
+
+```{r}
+summary(lmBodyFatUpperBody)
+```
+
+```{r}
+anova(lmBodyFatUpperBody)
+```
+
+```{r}
+confint(lmBodyFatUpperBody)
+```
+
+```{r}
+residuals <- residuals(lmBodyFatUpperBody)
+std_dev_residuals <- sd(residuals)
+paste("s:", std_dev_residuals)
+summary(lmBodyFatUpperBody$residual)
+```
+
+#### Interpretation
+This multiple regression model was developed to predict the percentage of body fat (PctBF) using the variables Neck, Chest, and Abdomen. The model demonstrates a **strong fit**, explaining approximately *70.88%* of the variability in PctBF, as indicated by the Multiple R-squared value. The Adjusted R-squared value of *70.52%* further supports the model's robustness, accounting for the number of predictors used.
+
+The coefficients for *Neck and Abdomen are statistically significant*, with p-values well below the 0.05 threshold, indicating that these variables have a meaningful impact on PctBF. Specifically, Neck has a negative relationship with PctBF (-0.72912), while Abdomen shows a strong positive relationship (0.90741). *The coefficient for Chest, however, is not statistically significant (p = 0.073421)*, suggesting that its impact on PctBF is minimal in the presence of the other predictors.
+
+The summary statistics of the residuals show that they have a mean of approximately zero (0.00000), indicating they are centered around zero. The median residual is 0.06501, close to zero, suggesting a **symmetric distribution**. The standard deviation of the residuals is *4.4758*, which provides insight into the average distance that the observed values fall from the regression line. A lower standard deviation indicates that the residuals are relatively close to the predicted values, reinforcing the model's accuracy. However, these statistics alone do not reveal trends or patterns, which require further analysis through residual plots and statistical tests.
+
+Overall, the *model is statistically significant*, as evidenced by the F-statistic (199.6) and its associated p-value (< 2.2e-16). This indicates that the predictors, collectively, provide a good fit for predicting PctBF. The confidence intervals for the coefficients reinforce the significance of Neck and Abdomen, while the interval for Chest includes zero, aligning with its lack of statistical significance.
+
+In conclusion, the *multiple regression model effectively predicts PctBF using Neck and Abdomen measurements, with Chest contributing less significantly.* The model's assumptions are met, and it provides a reliable tool for understanding the relationship between upper body parts and body fat percentage.
+
+### 2.3 Assumptions/Conditions
+
+#### 2.3.1 Residuals
+```{r}
+p <- ggplot(data = lmBodyFatUpperBody, mapping = aes(x = Neck, y = lmBodyFatUpperBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Neck")
+
+p <- ggplot(data = lmBodyFatUpperBody, mapping = aes(x = Chest, y = lmBodyFatUpperBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Chest")
+
+p <- ggplot(data = lmBodyFatUpperBody, mapping = aes(x = Abdomen, y = lmBodyFatUpperBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Abdomen")
+
+p <- ggplot(data = lmBodyFatUpperBody, mapping = aes(x = predict(lm(PctBF ~ Neck + Chest + Abdomen, data = BodyFat)), y = lmBodyFatUpperBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against predicted values")
+```
+
+The scatterplots of residuals against Neck, Chest, Abdomen, and the predicted values show no discernible trend, indicating that the residuals are randomly distributed and the linearity assumption is satisfied.
+
+#### 2.3.2 Histogram of Residuals
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = lmBodyFatUpperBody$residual))
+p + geom_histogram(aes(y = ..density..), alpha = 0.5) + 
+  geom_density(col = "red")
+```
+
+The histogram of the residuals approximates a normal distribution, suggesting that the residuals are symmetrically distributed around zero.
+
+#### 2.3.3 Normal Probability Plot of residual
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(sample = lmBodyFatUpperBody$residual))
+p + geom_qq() + 
+  geom_qq_line(color = "red") + 
+  labs(title = "Normal Probability Plot of residual:", x = "Normal Scores", y = "Residuals (Price)")
+```
+
+The Q-Q plot of the residuals shows a straight line, indicating that the residuals follow a normal distribution.
+
+Since all these assumptions are satisfied, **we conclude that our model is a good fit for predicting PctBF using upper body measurements**.
+
+
+## 3. Model 2 - Association between Percentage Body Fat and Lower Body Parts
+
+### 3.1 Scatterplot - Straight enough condition
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Hip, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Thigh, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Knee, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+Upon reviewing the scatterplots, we observed that the relationships between PctBF and the independent variables (Hip, Thigh, and Knee) are linear. This linearity is indicated by the straight-line patterns in the scatterplots, which suggests that the assumptions of linearity are met.
+
+Given that the scatterplots show a linear relationship with respect to the independent variables, we can confidently proceed with fitting the multiple regression model.
+
+### 3.2 Multiple Regression
+```{r}
+lmBodyFatLowerBody <- lm(PctBF ~ Hip + Thigh + Knee, data = BodyFat)
+lmBodyFatLowerBody
+```
+
+```{r}
+summary(lmBodyFatLowerBody)
+```
+
+```{r}
+anova(lmBodyFatLowerBody)
+```
+
+```{r}
+confint(lmBodyFatLowerBody)
+```
+
+```{r}
+residuals <- residuals(lmBodyFatLowerBody)
+std_dev_residuals <- sd(residuals)
+paste("s:", std_dev_residuals)
+summary(lmBodyFatLowerBody$residual)
+```
+
+#### Interpretation
+
+This multiple regression model was developed to predict the percentage of body fat (PctBF) using the variables Hip, Thigh, and Knee. The model demonstrates a **moderate fit**, explaining approximately *40.15%* of the variability in PctBF, as indicated by the Multiple R-squared value. The Adjusted R-squared value of *39.42%* further supports the model's robustness, accounting for the number of predictors used.
+
+The coefficient for *Hip is statistically significant*, with a p-value well below the 0.05 threshold (p = 4.79e-09), indicating that this variable has a meaningful impact on PctBF. Specifically, Hip has a positive relationship with PctBF. *The coefficients for Thigh and Knee, however, are not statistically significant (p = 0.817 and p = 0.546, respectively)*, suggesting that their impact on PctBF is minimal in the presence of the other predictors.
+
+The summary statistics of the residuals from your lmBodyFatLowerBody model show that the mean of the residuals is 0.0000, indicating they are centered around zero. The median residual is -0.1611, which is close to zero, suggesting a **symmetric distribution** around the mean. The standard deviation of the residuals is *6.4163*, which provides insight into the average distance that the observed values fall from the regression line. However, these statistics alone do not reveal trends or patterns, which would require further analysis through residual plots and statistical tests.
+
+Overall, the *model is statistically significant*, as evidenced by the F-statistic (55.01) and its associated p-value (< 2.2e-16). This indicates that the predictors, collectively, provide a good fit for predicting PctBF. The confidence intervals for the coefficients reinforce the significance of Hip, while the intervals for Thigh and Knee include zero, aligning with their lack of statistical significance.
+
+In conclusion, *the multiple regression model effectively predicts PctBF using Hip measurements, with Thigh and Knee contributing less significantly.* The model's assumptions are met, and it provides a reliable tool for understanding the relationship between lower body parts and body fat percentage.
+
+### 3.3 Assumptions/Conditions
+
+#### 3.3.1 Residuals
+```{r}
+p <- ggplot(data = lmBodyFatLowerBody, mapping = aes(x = Hip, y = lmBodyFatLowerBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Hip")
+
+p <- ggplot(data = lmBodyFatLowerBody, mapping = aes(x = Thigh, y = lmBodyFatLowerBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Thigh")
+
+p <- ggplot(data = lmBodyFatLowerBody, mapping = aes(x = Knee, y = lmBodyFatLowerBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Knee")
+
+p <- ggplot(data = lmBodyFatLowerBody, mapping = aes(x = predict(lm(PctBF ~ Hip + Thigh + Knee, data = BodyFat)), y = lmBodyFatLowerBody$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against predicted values")
+```
+
+The scatterplots of residuals against Hip, Thigh, Knee, and the predicted values show no discernible trend, indicating that the residuals are randomly distributed and the linearity assumption is satisfied.
+
+#### 3.3.2 Histogram of residual
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = lmBodyFatLowerBody$residual))
+p + geom_histogram(aes(y = ..density..), alpha = 0.5) + 
+  geom_density(col = "red")
+```
+
+The histogram of the residuals approximates a normal distribution, suggesting that the residuals are symmetrically distributed around zero.
+
+#### 3.3.3 Normal Probability Plot of residual
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(sample = lmBodyFatLowerBody$residual))
+p + geom_qq() + 
+  geom_qq_line(color = "red") + 
+  labs(title = "Normal Probability Plot of residual:", x = "Normal Scores", y = "Residuals (Price)")
+```
+
+The Q-Q plot of the residuals shows a straight line, indicating that the residuals follow a normal distribution.
+
+Since all these assumptions are satisfied, we conclude that **our model is a good fit for predicting PctBF using lower body measurements**.
+
+
+## 4. Model 3 - Association between Percentage Body Fat and Hands
+
+### 4.1 Scatterplot - Straight enough condition
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Bicep, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Forearm, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = Wrist, y = PctBF))
+p + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+Upon reviewing the scatterplots, we observed that the relationships between PctBF and the independent variables (Hip, Thigh, and Knee) are almost linear. This linearity is indicated by the almost straight-line patterns in the scatterplots, which suggests that the assumptions of linearity are met.
+
+Given that the scatterplots show a linear relationship with respect to the independent variables, we can confidently proceed with fitting the multiple regression model.
+
+### 4.2 Multiple Regression
+```{r}
+lmBodyFatHands <- lm(PctBF ~ Bicep + Forearm + Wrist, data = BodyFat)
+lmBodyFatHands
+```
+
+```{r}
+summary(lmBodyFatHands)
+```
+
+```{r}
+anova(lmBodyFatHands)
+```
+
+```{r}
+confint(lmBodyFatHands)
+```
+
+```{r}
+residuals <- residuals(lmBodyFatHands)
+std_dev_residuals <- sd(residuals)
+paste("s:", std_dev_residuals)
+summary(lmBodyFatHands$residual)
+```
+
+#### Interpretation
+This multiple regression model was developed to predict the percentage of body fat (PctBF) using the variables Bicep, Forearm, and Wrist. The model demonstrates a **moderate fit**, explaining approximately *23.54%* of the variability in PctBF, as indicated by the Multiple R-squared value. The Adjusted R-squared value of *22.61%* further supports the model's robustness, accounting for the number of predictors used.
+
+The coefficient for *Bicep is statistically significant*, with a p-value well below the 0.05 threshold (p = 8.08e-07), indicating that this variable has a meaningful impact on PctBF. Specifically, Bicep has a positive relationship with PctBF. *The coefficients for Forearm and Wrist, however, are not statistically significant (p = 0.685642 and p = 0.411764, respectively)*, suggesting that their impact on PctBF is minimal in the presence of the other predictors.
+
+The summary statistics of the residuals from your lmBodyFatHands model show that the mean of the residuals is 0.0000, indicating they are centered around zero. The median residual is -0.1681, which is close to zero, suggesting a **symmetric distribution** around the mean. The standard deviation of the residuals is *7.2523*, which provides insight into the average distance that the observed values fall from the regression line. However, these statistics alone do not reveal trends or patterns, which would require further analysis through residual plots and statistical tests.
+
+Overall, the *model is statistically significant*, as evidenced by the F-statistic (25.25) and its associated p-value (2.824e-14). This indicates that the predictors, collectively, provide a good fit for predicting PctBF. The confidence intervals for the coefficients reinforce the significance of Bicep, while the intervals for Forearm and Wrist include zero, aligning with their lack of statistical significance.
+
+In conclusion, *the multiple regression model effectively predicts PctBF using Bicep measurements*, with Forearm and Wrist contributing less significantly. The model's assumptions are met, and it provides a reliable tool for understanding the relationship between hand measurements and body fat percentage.
+
+### 4.3 Assumptions/Conditions
+
+#### 4.3.1 Residuals
+```{r}
+p <- ggplot(data = lmBodyFatHands, mapping = aes(x = Bicep, y = lmBodyFatHands$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Bicep")
+
+p <- ggplot(data = lmBodyFatHands, mapping = aes(x = Forearm, y = lmBodyFatHands$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Forearm")
+
+p <- ggplot(data = lmBodyFatHands, mapping = aes(x = Wrist, y = lmBodyFatHands$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against Wrist")
+
+p <- ggplot(data = lmBodyFatHands, mapping = aes(x = predict(lm(PctBF ~ Bicep + Forearm + Wrist, data = BodyFat)), y = lmBodyFatHands$residual))
+p + geom_point() + 
+  labs(title = "Residual plot against predicted values")
+```
+
+The scatterplots of residuals against Bicep, Forearm, Wrist, and the predicted values show no discernible trend, indicating that the residuals are randomly distributed and the linearity assumption is satisfied.
+
+#### 4.3.2 Histogram of residual
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(x = lmBodyFatHands$residual))
+p + geom_histogram(aes(y = ..density..), alpha = 0.5) + 
+  geom_density(col = "red")
+```
+
+The histogram of the residuals approximates a normal distribution, suggesting that the residuals are symmetrically distributed around zero.
+
+#### 4.3.3 Normal Probability Plot of residual
+```{r}
+p <- ggplot(data = BodyFat, mapping = aes(sample = lmBodyFatHands$residual))
+p + geom_qq() + 
+  geom_qq_line(color = "red") + 
+  labs(title = "Normal Probability Plot of residual:", x = "Normal Scores", y = "Residuals (Price)")
+```
+
+The Q-Q plot of the residuals shows a straight line, indicating that the residuals follow a normal distribution.
+
+Since all these assumptions are satisfied, **we conclude that our model is a good fit for predicting PctBF using hand measurements**.
+
+## 5. Conclusion
+
+In conclusion, among the three models developed to predict the percentage of body fat (PctBF) using various body measurements, **Model 1, which examines the association between PctBF and upper body parts, emerges as the most effective**. This model boasts the highest coefficient of determination r^2 at 0.7088, indicating a strong fit and suggesting that approximately 70.88% of the variability in body fat percentage can be explained by the measurements of the upper body parts. The Adjusted R^2 value of 70.52% further supports the model’s robustness, accounting for the number of predictors used. The F-statistic for Model 1 is 199.6 with a p-value of < 2.2e-16, indicating that the predictors collectively provide a good fit for predicting PctBF. Additionally, the standard deviation of the residuals is 4.4758, indicating that the residuals are relatively close to the predicted values, reinforcing the model's accuracy. These statistics collectively demonstrate that the upper body measurements are the most strongly associated with body fat percentage, making Model 1 the most reliable predictor among the three.
+
+**Model 2, which focuses on the lower body, is the second-best model.** It has an R^2 value of 0.4015, indicating that approximately 40.15% of the variability in body fat percentage can be explained by the lower body measurements. The Adjusted R^2 value is 39.42%, which, while lower than Model 1, still shows a moderate fit. The F-statistic for Model 2 is 55.01 with a p-value of < 2.2e-16, indicating statistical significance. However, the standard deviation of the residuals is 6.4163, higher than Model 1, suggesting less precision in its predictions. These statistics indicate that while the lower body measurements are associated with body fat percentage, they are less predictive than the upper body measurements.
+
+**Model 3, which examines the hands, is the least effective model.** It has an R^2 value of 0.2354, indicating that only 23.54% of the variability in body fat percentage can be explained by the hand measurements. The Adjusted R^2 value is 22.61%, reflecting a moderate fit. The F-statistic for Model 3 is 25.25 with a p-value of 2.824e-14, showing statistical significance but a much weaker fit compared to the other models. The standard deviation of the residuals is 7.2523, the highest among the three models, indicating the least precision. These statistics suggest that hand measurements are the least associated with body fat percentage.
+
+In summary, the upper body model (Model 1) is the most effective predictor of body fat percentage, followed by the lower body model (Model 2), and finally the hand model (Model 3). The strong association observed in Model 1 can be attributed to the inclusion of key variables such as Neck, Chest, and Abdomen, which are likely more indicative of overall body fat distribution.
+
+## 6. Issues/Limitations
+
+1. **Sample Size:** The dataset used in this analysis is relatively small, consisting of only 250 observations. A small sample size can limit the generalizability of the findings and increase the risk of overfitting, where the model performs well on the training data but poorly on new, unseen data. Larger datasets are generally more representative of the population and provide more reliable estimates.
+
+2. **Gender Bias:** The dataset exclusively includes data from men, which means the model may not be applicable to women. Body fat distribution and the relationship between body measurements and body fat percentage can differ significantly between genders. Therefore, the model's predictions may not be accurate for women, highlighting the need for a more diverse dataset that includes both men and women.
+
+3. **Exclusion of Age:** Age is an important factor in understanding body fat percentage, as body composition changes with age. However, age was not considered in this analysis. Including age as a predictor could improve the model's accuracy and provide a more comprehensive understanding of the factors influencing body fat percentage.
+
+4. **Feature Selection:** The decision to divide the features into upper body, lower body, and hands was based on the available data. However, this approach may overlook other important body parts that contribute significantly to body fat percentage. For instance, certain lower body parts might have a higher fat content and a stronger association with body fat percentage. Including such features could potentially alter the conclusion that the upper body has a greater influence on body fat percentage than the lower body.
+
+5. **Multicollinearity:** One significant issue with multiple regression is multicollinearity, which occurs when two or more predictor variables are highly correlated with each other. For example, when Waist, Abdomen, and Hips were used as predictors for the middle body parts, the coefficient for Waist became N/A. This happened because Waist and Abdomen are highly correlated, leading to instability in the regression coefficients. Multicollinearity can inflate the standard errors of the coefficients, making it difficult to determine the individual effect of each predictor.
